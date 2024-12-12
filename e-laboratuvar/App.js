@@ -17,7 +17,7 @@ const styles = StyleSheet.create({
   },
   standartText: {
     fontSize:24,
-    color:'#999'    
+    color:'#f8f8f8'    
   },
   fancyText: {
     fontStyle:'italic',

@@ -1,144 +1,126 @@
-import React from "react";
-// Bunlar RN bileşenleri
-import {
-  StyleSheet,
-  SafeAreaView,
-  View, // HTML DIV
-  Text,
-  TouchableOpacity, // Resim, yazı vs tıklanabilir buton haline getiriyor
-  TextInput, // Metin Girişi
-} from "react-native";
+import React, {useState, useEffect} from 'react';
+import {Text, SafeAreaView, StyleSheet, View, FlatList, ActivityIndicator, Image, TextInput} from 'react-native';
+import filter from 'lodash.filter';
 
-//import { StatusBar } from "expo-status-bar";
-import { FontAwesome5 } from "@expo/vector-icons"; // v4 vardı. v5 ile bazı ikonlar paralı. Standart her yerde kullanılan ikonlar. 
-// Bu işlerde ikon, buton, aklınıza görsel anlamda ne gelirse, siz tasarlarsınız. Ama artık. Bazı şeyler yazılı olmasa da standart olarak kullanılıyor. 
-// Bootstrap gibi, fontawsome gibi. Türkçe karakterleri kontrol etmek için ya da Büyük küçük çevrim işleri için ufak fonksiyonları yazıyorsunuz. 
-// Ya da spesifik işler için lazım olan neyse onu ekliyorsunuz kütüphanenize.
+const API_ENDPOINT = 'https://randomuser.me/api/?results=34';
 
-import Constants from "expo-constants"; // Ekran yüksekliği, STATUS BAR, Safearea vs. gibi şeylerin yükseklik genişlik gibi özelliklerini sağlıyor.
+export default function App() {
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [data, setData] = useState([]);
+  const [error, setError] = useState(null);
+  const [query, setQuery] = useState('');
+  const [fullData, setFullData] = useState([]);
+
+  const handleSearch = text => {
+    const formattedQuery = text.toLowerCase();
+    const filteredData = filter( fullData, user => contains(user, formattedQuery) );
+
+    setData(filteredData);
+    setQuery(text);
+  };
 
 
+  const contains = ({name, email}, query) => {
+          const {first, last} = name;
+          return first.includes(query) || last.includes(query) || email.includes(query);
 
-export default function MomoLogin() {
-  return (
-    <SafeAreaView style={styles.container}>
-     
-     { /* <StatusBar style="light" /> */ }
+  };
 
-      <View style={styles.content}>
-        
+  useEffect(() => {
+                      setIsLoading(true);
 
-       { /* Tepedeki View */ }
+                      fetch(API_ENDPOINT)
+                      .then( response => response.json() )
+                      .then( response => {
+                                            setData(response.results);
+                                            setFullData(response.results);
+                                            setIsLoading(false);
+                      })
+                      .catch( err=> {
+                        setIsLoading(false);
+                        setError(err);
+                      });
+  }, []);
 
-        <View style={styles.textWrapper}> 
-          
-          <Text style={styles.hiText}>Merhaba!</Text>
-          <Text style={styles.userText}>Gündüz Gökbörü</Text>
-        
-        </View>
-
-        <View style={styles.form}> { /* // Login View */ } 
-         
-          <FontAwesome5 name="lock" style={styles.iconLock} />
-     
-          { /* // Şifre Girişi */ } 
-          <TextInput
-            style={styles.inputPassword} // Hangi stilden alacak?
-            keyboardType="numeric" // Otomatik olarak numpad çıkması için. Bu güzel özellik. Genelde bankacılık uygulamasında kullanılsa da 
-            secureTextEntry={true} // ***** olarak gözükmesi için
-            autoFocus={true} // otomatik olarak input'a imleci konumlandırmak için. 
-            placeholder="Parolayı Giriniz" // Ne yazacak giriş yapılmadığı zaman
-            placeholderTextColor="#929292" // bu placaHolder'ın rengi.
-          />
-
-       
-          <TouchableOpacity style={styles.buttonLogin}>
-            <Text style={styles.buttonLoginText}>GİRİŞ</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.action}>
-          <TouchableOpacity>
-            <Text style={styles.userText}>Parolamı Unuttum</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity>
-            <Text style={styles.userText} numberOfLines={1} adjustsFontSizeToFit>Yeni Kayıt</Text>
-          </TouchableOpacity>
-        </View>
+  if(isLoading) {
+    return (
+      <View style={{ flex:1, justifyContent:'center', alignItems:'center'}}>
+              <ActivityIndicator size="large" color="#5500dc" />
       </View>
-    </SafeAreaView>
+    );
+  }
+
+  if(error) {
+    return (
+      <View style={{ flex:1, justifyContent:'center', alignItems:'center'}}>
+              <Text style={{fontSize:20}}> Veri alma hatası, Bağlantınızı kontrol edin!</Text>
+      </View>
+    );
+
+  }
+
+  function renderHeader () {
+    return (
+            <View style={{ backgroundColor:'#fff', padding:10, marginVertical:10, borderRadius:20}}> 
+                  <TextInput 
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            clearButtonMode="always"
+                            value={query}
+                            onChangeText={ queryText => handleSearch(queryText) }
+                            placeholder="Arama yapın"
+                            autoFocus={true}
+                            style={{backgroundColor:'#fff', paddingHorizontal:20}}
+                  />
+            </View>
+    );
+  }
+
+  return (
+          <View style={styles.container}>
+            <Text style={styles.text}> Favorite Contacts </Text>
+
+            <FlatList 
+                      ListHeaderComponent={renderHeader}
+                      data={data}
+                      keyExtractor={ item => item.name.first}
+                      renderItem={ ({item}) => (
+                              <View style={styles.listItem}>
+                                  <Image
+                                        source={{ uri: item.picture.large }}
+                                        style={styles.coverImage} 
+                                  />
+
+                                  <View style={styles.metaInfo}>
+                                        <Text style={styles.title}> {`${item.name.first} ${item.name.last}`} </Text>
+                                        <Text style={styles.title}>Age: {`${item.dob.age} ${item.location.country}`}</Text>
+                                  </View>
+
+                              </View>
+                      )}
+            />
+          </View>
   );
+
 }
 
-
-// const SABİT TANIMLAMA
-const TEXT = {
-  color: "#fff", // Yazı rengi beyaz.
-  textAlign: "center", // Metin özelliği olarak ortalanacak.
-  // ...TEXT diyerek buradaki sabiti her yerde kullanabilirsiniz.
-  // Hızdan kazanırsınız, uygulama boyutu vs. 
-};
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#b0006d",
-    paddingTop: Constants.statusBarHeight,
+  container:{flex:1, backgroundColor:'#f8f8f8', alignItems:'center'},
+  text:{
+    fontSize:20,
+    color:"#101010",
+    marginTop:60,
+    fontWeight:'700'
   },
-  content: {
-    paddingHorizontal: 30,
+  listItem:{
+    marginTop:10,
+    paddingVertical:20,
+    paddingHorizontal:20,
+    backgroundColor:'#fff',
+    flexDirection:'row'
   },
-  textWrapper: {
-    marginTop: 60,
-    marginBottom: 30,
-  },
-  hiText: {
-    ...TEXT,
-    fontSize: 20,
-    lineHeight: 50,
-    fontWeight: "bold",
-  },
-  userText: {
-    ...TEXT,
-    fontSize: 15,
-    lineHeight: 30,
-  },
-  form: {
-    marginBottom: 30,
-  },
-  iconLock: {
-    color: "#929292",
-    position: "absolute",
-    fontSize: 16,
-    top: 22,
-    left: 22,
-    zIndex: 10,
-  },
-  inputPassword: {
-    height: 60,
-    borderRadius: 30,
-    paddingHorizontal: 30,
-    fontSize: 20,
-    color: "#929292",
-    backgroundColor: "#fff",
-    textAlign: "center",
-    textAlignVertical: "center",
-  },
-  buttonLogin: {
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: "#8d015a",
-    justifyContent: "center",
-    marginTop: 15,
-  },
-  buttonLoginText: {
-    ...TEXT,
-  },
-  action: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
+  coverImage:{width:100, height:100, borderRadius:10},
+  metaInfo:{marginLeft:10},
+  title:{fontSize:18, width:200, padding:10},
 });
-
-

@@ -9,6 +9,21 @@ export default () => (
   </View>
 );
 
+{
+  "expo": {
+    "name": "w06-01-bmi-button",
+    "slug": "snack-2f97f777-e2fc-4d86-b3d2-f3e64f611cdf",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+  }}
+
 const styles = StyleSheet.create({
   myStyle: {
     width:400,

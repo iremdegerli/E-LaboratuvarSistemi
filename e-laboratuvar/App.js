@@ -1,42 +1,42 @@
-import {View, Text, StyleSheet} from 'react-native';
+import { Text, View, StyleSheet, SectionList } from 'react-native';
 
-export default () => (
-  <View style={styles.myStyle}>
-    <Text style={ styles.standartText}> standartText ile biçimlendirilmiş yazı</Text>
-    <Text style={[styles.standartText,styles.fancyText]}>
-      fancyText fontStyle ve color eklenmiş yazı
-    </Text>
-  </View>
-);
 
-{
-  "expo": {
-    "name": "w06-01-bmi-button",
-    "slug": "snack-2f97f777-e2fc-4d86-b3d2-f3e64f611cdf",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-  }}
+export default function App() {
+
+    const sections = [
+      { title: 'A', data: ['Apple', 'Avocado'] },
+      { title: 'B', data: ['Banana', 'Blueberry'] },
+      { title: 'C', data: ['Cherry', 'Coconut'] }
+    ];
+
+  return (
+
+    <SectionList
+      sections = { sections }
+      keyExtractor = { (item, index) => item = index }
+      renderItem = { ( { item } ) => <Text style = {styles.item}> {item} </Text> }
+      renderSectionHeader = {
+        ( {section }) => (
+          <Text style = {styles.header}> {section.title} </Text>
+        )
+      }
+
+
+    />
+
+  );
+}
 
 const styles = StyleSheet.create({
-  myStyle: {
-    width:400,
-    height:400,
-    backgroundColor:'skyblue'
+  item: {
+    padding: 10,
+    fontSize: 20,
+    backgroundColor: '#f9f9f9'
   },
-  standartText: {
-    fontSize:24,
-    color:'#f8f8f8'    
-  },
-  fancyText: {
-    fontStyle:'italic',
-    color:'rgb(0,125,255)'
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    backgroundColor: '#efefef',
+    padding: 10
   }
-})
-  
+});

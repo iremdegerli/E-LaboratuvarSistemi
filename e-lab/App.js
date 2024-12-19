@@ -11,11 +11,11 @@ const Stack = createStackNavigator();
 export default function App() {
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    firebase.auth().onAuthStateChanged((user) => {
-      setUser(user);
-    });
-  }, []);
+  // useEffect(() => {
+  //   firebase.auth().onAuthStateChanged((user) => {
+  //     setUser(user);
+  //   });
+  // }, []);
 
   return (
     <NavigationContainer>

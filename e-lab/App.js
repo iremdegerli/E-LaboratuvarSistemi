@@ -24,10 +24,10 @@ export default function App() {
           user.email === "admin@example.com" ? (
             <Stack.Screen name="Admin" component={AdminScreen} />
           ) : (
-            <Stack.Screen name="User" component={UserScreen} />
+            <Stack.Screen name="Admin" component={UserScreen} />
           )
         ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Admin" component={LoginScreen} />
         )}
       </Stack.Navigator>
     </NavigationContainer>

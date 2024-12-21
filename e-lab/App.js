@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { firebase } from "./firebaseConfig";
-
-
 import Register from "./components/Register";
 
 

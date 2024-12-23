@@ -8,10 +8,7 @@ import HomeScreen from "./components/HomeScreen";
 //import ProfileScreen from "./components/ProfileScreen";
 //import EditProfileScreen from "./components/EditProfileScreen";
 
-<<<<<<< Updated upstream
 const Tab = createBottomTabNavigator();
-=======
-
 
 const Stack = createStackNavigator();
 
@@ -26,7 +23,6 @@ function App() {
 export default App;
 /*
 export default App;
->>>>>>> Stashed changes
 
 export default function App() {
   return (
@@ -39,3 +35,4 @@ export default function App() {
     
   );
 }
+*/

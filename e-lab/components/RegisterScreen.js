@@ -5,19 +5,19 @@ import { auth } from "../firebaseConfig"; // Firebase yapılandırmasını içe 
 // Kullanıcı Kayıt Formu
 const Register = () => {
   const [email, setEmail] = useState(""); // Email state
-  const [password, setPassword] = useState(""); // Şifre state
-  const [error, setError] = useState(""); // Hata mesajları için state
+  const [password, setPassword] = useState(""); 
+  const [error, setError] = useState(""); 
 
   // Kayıt olma işlevi
   const handleRegister = async (e) => {
-    e.preventDefault(); // Formun yenilenmesini engeller
+    e.preventDefault(); 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      console.log("Kayıt Başarılı: ", userCredential.user); // Kullanıcı bilgileri
+      console.log("Kayıt Başarılı: ", userCredential.user); 
       alert("Kayıt başarılı!");
     } catch (err) {
       console.error("Kayıt Hatası: ", err.message);
-      setError(err.message); // Hata mesajını kullanıcıya göster
+      setError(err.message); 
     }
   };
 
@@ -46,4 +46,4 @@ const Register = () => {
   );
 };
 
-export default Register; // Register bileşenini dışa aktar
+export default Register;

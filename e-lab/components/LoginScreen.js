@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { signInWithEmailAndPassword } from "firebase/auth"; // Firebase giriş işlevi
 import { auth } from "../firebaseConfig"; // Firebase yapılandırmasını içe aktar
+import { getFirestore, doc, getDoc } from "firebase/firestore"; 
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState(""); // Email state

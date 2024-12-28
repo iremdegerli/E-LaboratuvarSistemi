@@ -101,7 +101,7 @@ export default function GuideSearchScreen() {
             value={birthDate}
             mode="date"
             display="default"
-            maximumDate={new Date()} // Bugünden sonraki tarihler engellendi
+            maximumDate={new Date()}
             onChange={(event, selectedDate) => {
               setShowDatePicker(false);
               if (selectedDate) {

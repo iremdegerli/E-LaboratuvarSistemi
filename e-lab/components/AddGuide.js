@@ -1,49 +1,65 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from "react-native";
+import { Picker } from "@react-native-picker/picker"; // Picker'ı buradan içe aktarın
 import { database } from "../firebaseConfig"; // Firebase yapılandırmanızı buradan içe aktarın
-import { collection, doc, setDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 
-export default function AddGuide() {
+export default function AddGuideScreen() {
   const [guideName, setGuideName] = useState("");
-  const [IgG4Values, setIgG4Values] = useState({ maxValue: "", minValue: "", monthsMax: "", monthsMin: "" });
+  const [selectedDocument, setSelectedDocument] = useState("IgA");
+  const [values, setValues] = useState({ maxValue: "", minValue: "", monthsMax: "", monthsMin: "" });
 
-  const handleAddGuide = async () => {
-    if (!guideName || !IgG4Values.maxValue || !IgG4Values.minValue || !IgG4Values.monthsMax || !IgG4Values.monthsMin) {
+  const handleAddDocument = async () => {
+    if (!guideName || !selectedDocument || !values.maxValue || !values.minValue || !values.monthsMax || !values.monthsMin) {
       Alert.alert("Hata", "Lütfen tüm alanları doldurun.");
       return;
     }
 
     try {
-      // Kılavuz koleksiyonuna referans
-      const guideRef = doc(collection(database, "kılavuz"), guideName);
+      // Kılavuz referansı
+      const guideRef = doc(database, "kılavuz", guideName);
+      const guideDoc = await getDoc(guideRef);
 
-      // IgG4 verisini oluştur
-      const IgG4Data = {
-        IgG4: [
-          {
-            maxValue: IgG4Values.maxValue,
-            minValue: IgG4Values.minValue,
-            months: {
-              max: IgG4Values.monthsMax,
-              min: IgG4Values.monthsMin,
-            },
-          },
-        ],
+      const newEntry = {
+        maxValue: values.maxValue,
+        minValue: values.minValue,
+        months: {
+          max: values.monthsMax,
+          min: values.monthsMin,
+        },
       };
 
-      // Veriyi Firestore'a ekle
-      await setDoc(guideRef, IgG4Data);
-      Alert.alert("Başarılı", `${guideName} kılavuzu başarıyla oluşturuldu!`);
+      if (guideDoc.exists()) {
+        // Kılavuz varsa, var olan belgeyi güncelle
+        const existingData = guideDoc.data();
+
+        if (existingData[selectedDocument]) {
+          // Belge mevcutsa, yeni değeri mevcut değerlere ekle
+          const updatedArray = [...existingData[selectedDocument], newEntry];
+          await updateDoc(guideRef, { [selectedDocument]: updatedArray });
+        } else {
+          // Belge yoksa, yeni bir belge oluştur
+          await updateDoc(guideRef, { [selectedDocument]: [newEntry] });
+        }
+
+        Alert.alert("Başarılı", `${selectedDocument} başarıyla güncellendi!`);
+      } else {
+        // Kılavuz yoksa yeni kılavuz oluştur ve belgeyi ekle
+        await setDoc(guideRef, { [selectedDocument]: [newEntry] });
+        Alert.alert("Başarılı", `${guideName} kılavuzu başarıyla oluşturuldu ve ${selectedDocument} eklendi!`);
+      }
+
       setGuideName("");
-      setIgG4Values({ maxValue: "", minValue: "", monthsMax: "", monthsMin: "" });
+      setSelectedDocument("IgA");
+      setValues({ maxValue: "", minValue: "", monthsMax: "", monthsMin: "" });
     } catch (error) {
-      console.error("Kılavuz ekleme hatası:", error);
-      Alert.alert("Hata", "Kılavuz eklenirken bir sorun oluştu.");
+      console.error("Belge ekleme hatası:", error);
+      Alert.alert("Hata", "Belge eklenirken bir sorun oluştu.");
     }
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Kılavuz Ekle</Text>
 
       <TextInput
@@ -53,75 +69,118 @@ export default function AddGuide() {
         onChangeText={setGuideName}
       />
 
-      <Text style={styles.subtitle}>IgG4 Değerleri</Text>
+      <Text style={styles.subtitle}>Belge Seç</Text>
+      <Picker
+        selectedValue={selectedDocument}
+        style={styles.picker}
+        onValueChange={(itemValue) => setSelectedDocument(itemValue)}
+      >
+        <Picker.Item label="IgA" value="IgA" />
+        <Picker.Item label="IgA1" value="IgA1" />
+        <Picker.Item label="IgA2" value="IgA2" />
+        <Picker.Item label="IgM" value="IgM" />
+        <Picker.Item label="IgG" value="IgG" />
+        <Picker.Item label="IgG1" value="IgG1" />
+        <Picker.Item label="IgG2" value="IgG2" />
+        <Picker.Item label="IgG3" value="IgG3" />
+        <Picker.Item label="IgG4" value="IgG4" />
+      </Picker>
+      <TextInput
+      style={styles.input}
+      placeholder="Min Ay"
+      value={values.monthsMin}
+      onChangeText={(value) => setValues({ ...values, monthsMin: value })}
+      />
       <TextInput
         style={styles.input}
         placeholder="Max Ay"
-        value={IgG4Values.monthsMax}
-        onChangeText={(value) => setIgG4Values({ ...IgG4Values, monthsMax: value })}
+        value={values.monthsMax}
+        onChangeText={(value) => setValues({ ...values, monthsMax: value })}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Min Ay"
-        value={IgG4Values.monthsMin}
-        onChangeText={(value) => setIgG4Values({ ...IgG4Values, monthsMin: value })}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Max Değer"
-        value={IgG4Values.maxValue}
-        onChangeText={(value) => setIgG4Values({ ...IgG4Values, maxValue: value })}
-      />
+      <Text style={styles.subtitle}>Değerler</Text>
       <TextInput
         style={styles.input}
         placeholder="Min Değer"
-        value={IgG4Values.minValue}
-        onChangeText={(value) => setIgG4Values({ ...IgG4Values, minValue: value })}
+        value={values.minValue}
+        onChangeText={(value) => setValues({ ...values, minValue: value })}
+      />   
+      <TextInput
+        style={styles.input}
+        placeholder="Max Değer"
+        value={values.maxValue}
+        onChangeText={(value) => setValues({ ...values, maxValue: value })}
       />
       
-
-      <TouchableOpacity style={styles.button} onPress={handleAddGuide}>
-        <Text style={styles.buttonText}>Kılavuz Ekle</Text>
+      <TouchableOpacity style={styles.button} onPress={handleAddDocument}>
+        <Text style={styles.buttonText}>Belge Ekle</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: 20,
-    backgroundColor: "#f7f7f7",
+    backgroundColor: "#f7f7f7", // Pastel bir arka plan rengi
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 20,
+    color: "#34495E", // Koyu mavi tonunda bir başlık rengi
+    marginBottom: 30,
   },
   subtitle: {
     fontSize: 18,
     fontWeight: "600",
+    color: "#34495E",
     marginBottom: 10,
   },
   input: {
     height: 50,
-    backgroundColor: "#fff",
-    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
     paddingHorizontal: 15,
-    marginBottom: 15,
-    borderColor: "#ddd",
+    marginBottom: 20,
+    borderColor: "#BDC3C7", // Hafif gri bir kenarlık
     borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  picker: {
+    height: 50,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    marginBottom: 20,
+    borderColor: "#BDC3C7",
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   button: {
     backgroundColor: "#00796B",
-    padding: 15,
+    paddingVertical: 15,
+    paddingHorizontal: 25,
     borderRadius: 10,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonText: {
-    color: "#fff",
+    color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "bold",
+    textTransform: "uppercase",
   },
 });

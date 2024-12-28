@@ -17,7 +17,7 @@ function App() {
    <NavigationContainer>
     <Tab.Navigator initialRouteName="Home">
       <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Ana Sayfa', tabBarStyle: { display: 'none' } }} />
-      <Tab.Screen name="Login" component={LoginScreen} options={{ title: 'Giriş Yap', tabBarStyle: { display: 'none' } }} />
+      <Tab.Screen name="Login1" component={LoginScreen} options={{ title: 'Giriş Yap', tabBarStyle: { display: 'none' } }} />
       <Tab.Screen name="Register" component={RegisterScreen} options={{ title: 'Kayıt Ol', tabBarStyle: { display: 'none' } }} />
       <Tab.Screen name="Login" component={AddGuide} options={{ title: 'Kayıt Ol', tabBarStyle: { display: 'none' } }} />
     </Tab.Navigator>

@@ -27,17 +27,3 @@ function App() {
   );
 }
 export default App;
-/*
-export default App;
-export default function App() {
-  return (
-    <NavigationContainer>
-      <Tab.Navigator initialRouteName="Home">
-        <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Ana Sayfa', tabBarStyle: { display: 'none' } }} />
-        <Tab.Screen name="Register" component={RegisterScreen} options={{ title: 'Kayıt Ol', tabBarStyle: { display: 'none' } }} />
-      </Tab.Navigator>
-    </NavigationContainer>
-    
-  );
-}
-*/

@@ -8,7 +8,9 @@ import SearchGuide from "./components/SearchGuide";
 import HomeScreen from "./components/HomeScreen";
 import LoginScreen from "./components/LoginScreen";
 import AdminHome from "./components/AdminHome";
+import UserHome from "./components/UserHome";
 import PatientRegister from "./components/PatientRegister";
+import PatientsTests from "./components/PatientsTests";
 import AddTest from "./components/AddTest";
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -51,6 +53,11 @@ function UserNavigator() {
   return (
     <Tab.Navigator>
       <Tab.Screen
+        name="UserHome"
+        component={UserHome}
+        options={{ title: "Kullanıcı Paneli" }}
+      />
+      <Tab.Screen
         name="ProfileScreen"
         component={RegisterScreen}
         options={{ title: "Profil Yönetimi" }}
@@ -58,7 +65,7 @@ function UserNavigator() {
       <Tab.Screen
         name="SearchGuide"
         component={SearchGuide}
-        options={{ title: "Değer Sorgula" }}
+        options={{ title: "Tahlillerim" }}
       />
     </Tab.Navigator>
   );

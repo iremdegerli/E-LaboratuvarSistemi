@@ -9,6 +9,7 @@ import HomeScreen from "./components/HomeScreen";
 import LoginScreen from "./components/LoginScreen";
 import AdminHome from "./components/AdminHome";
 import PatientRegister from "./components/PatientRegister";
+import AddTest from "./components/AddTest";
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
@@ -20,6 +21,16 @@ function AdminNavigator() {
         name="AdminHome"
         component={AdminHome}
         options={{ title: "Admin Paneli" }}
+      />
+      <Tab.Screen
+      name="PatientRegister"
+      component={PatientRegister}
+      options={{ title: "Hasta Sorgulama" }}
+    />
+    <Tab.Screen
+        name="AddTest"
+        component={AddTest}
+        options={{ title: "Tetkik Takibi" }}
       />
       <Tab.Screen
         name="AddGuide"
@@ -56,10 +67,10 @@ function UserNavigator() {
 function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Patient" screenOptions={{ headerShown: false }}>
+      <Stack.Navigator initialRouteName="AdminHome" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Patient" component={PatientRegister} />
-
+        <Stack.Screen name="AddTest" component={AddTest}/>
         <Stack.Screen name="AdminHome" component={AdminNavigator} />
         <Stack.Screen name="UserHome" component={UserNavigator} />
         <Stack.Screen name="Login" component={AdminNavigator} />

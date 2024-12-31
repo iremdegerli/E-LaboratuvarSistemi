@@ -1,29 +1,64 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView } from "react-native";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
+import DatePicker from 'react-native-date-picker';
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, firestore } from "../firebaseConfig";
+import { FontAwesome } from "@expo/vector-icons"; // FontAwesome simgelerini kullanıyoruz
 
-const PatientTestResults = () => {
+const PatientRegister = () => {
+  const [isim, setIsim] = useState("");
+  const [soyisim, setSoyisim] = useState("");
   const [tc, setTc] = useState("");
+  const [dogumTarihi, setDogumTarihi] = useState(new Date());
+  const [dogumTarihiVisible, setDogumTarihiVisible] = useState(false);
+  const [cinsiyet, setCinsiyet] = useState("");
   const [seciliHasta, setSeciliHasta] = useState(null);
-  const [testResults, setTestResults] = useState([]);
+  const [isAddPatient, setIsAddPatient] = useState(false);
+  const [isSearchPatient, setIsSearchPatient] = useState(false);
 
   const db = getFirestore();
 
-  // Test referans değerleri (örnek olarak)
-  const referenceRanges = {
-    IgA: { min: 70, max: 400 },
-    IgM: { min: 40, max: 230 },
-    IgG: { min: 700, max: 1600 },
-    IgG1: { min: 250, max: 800 },
-    IgG2: { min: 100, max: 400 },
-    IgG3: { min: 150, max: 600 },
-    IgG4: { min: 10, max: 100 },
+  const isValidTc = (tc) => {
+    const tcPattern = /^[1-9]{1}[0-9]{10}$/;
+    return tcPattern.test(tc);
   };
 
   const handleTcChange = (text) => {
     if (text.length <= 11) {
       setTc(text);
+    }
+  };
+
+  const hastaKaydet = async () => {
+    if (!isim || !soyisim || !tc || !dogumTarihi || !cinsiyet) {
+      Alert.alert("Eksik Alan", "Lütfen tüm alanları doldurun.");
+      return;
+    }
+
+    if (!isValidTc(tc)) {
+      Alert.alert("Geçersiz TC", "Lütfen geçerli bir 11 haneli TC kimlik numarası giriniz.");
+      return;
+    }
+
+    try {
+      const hastaRef = doc(db, "hastalar", tc);
+      const docSnap = await getDoc(hastaRef);
+
+      if (!docSnap.exists()) {
+        await setDoc(hastaRef, {
+          tc,
+          isim,
+          soyisim,
+          dogumTarihi,
+          cinsiyet,
+          tahliller: [],
+        });
+        Alert.alert("Başarı", "Hasta kaydedildi!");
+      } else {
+        Alert.alert("Zaten Kayıtlı", "Bu TC kimlik numarasıyla kayıtlı bir hasta zaten var.");
+      }
+    } catch (error) {
+      console.error("Hasta kaydı sırasında hata:", error);
     }
   };
 
@@ -39,7 +74,6 @@ const PatientTestResults = () => {
 
       if (docSnap.exists()) {
         setSeciliHasta(docSnap.data());
-        setTestResults(docSnap.data().tahliller);
       } else {
         Alert.alert("Hasta Bulunamadı", "Bu TC kimlik numarasıyla kayıtlı bir hasta bulunamadı.");
       }
@@ -48,58 +82,98 @@ const PatientTestResults = () => {
     }
   };
 
-  // Test sonucu ile referans aralığı karşılaştırması
-  const getResultSymbol = (value, testName) => {
-    const referenceRange = referenceRanges[testName];
-    if (!referenceRange) return null;
+  const compareValues = (tahliller) => {
+    // Tahlil değerlerini karşılaştıracak fonksiyon
+    return tahliller.map((tahlil, index) => {
+      const degerler = Object.entries(tahlil.degerler);
+      let comparisonResults = [];
 
-    if (value < referenceRange.min) {
-      return "❌"; // Değer düşük
-    } else if (value > referenceRange.max) {
-      return "❌"; // Değer yüksek
-    } else {
-      return "✅"; // Değer normal
-    }
+      // Değerleri karşılaştırıyoruz
+      for (let i = 0; i < degerler.length - 1; i++) {
+        for (let j = i + 1; j < degerler.length; j++) {
+          const [key1, value1] = degerler[i];
+          const [key2, value2] = degerler[j];
+          if (value1 < value2) {
+            comparisonResults.push(
+              <Text key={`${index}-${key1}-${key2}`} style={styles.comparisonText}>
+                {key1} < FontAwesome name="arrow-down" size={20} color="green" /> {key2}
+              </Text>
+            );
+          } else if (value1 > value2) {
+            comparisonResults.push(
+              <Text key={`${index}-${key1}-${key2}`} style={styles.comparisonText}>
+                {key1} < FontAwesome name="arrow-up" size={20} color="red" /> {key2}
+              </Text>
+            );
+          } else {
+            comparisonResults.push(
+              <Text key={`${index}-${key1}-${key2}`} style={styles.comparisonText}>
+                {key1} ve {key2} eşit.
+              </Text>
+            );
+          }
+        }
+      }
+
+      return (
+        <View key={index} style={styles.tahlilBox}>
+          <Text style={styles.tahlilTitle}>Tahlil Tarihi: {tahlil.tarih}</Text>
+          <View style={styles.tahlilValues}>
+            {Object.entries(tahlil.degerler).map(([key, value], idx) => (
+              <Text key={idx} style={styles.tahlilValue}>
+                {key}: {value}
+              </Text>
+            ))}
+          </View>
+          {comparisonResults}
+        </View>
+      );
+    });
   };
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <Text style={styles.title}>Hasta Test Sonuçları</Text>
-      <TextInput
-        placeholder="TC Kimlik Numarası"
-        value={tc}
-        onChangeText={handleTcChange}
-        style={styles.input}
-        keyboardType="numeric"
-        maxLength={11}
-      />
-      <Button title="Hasta Ara" onPress={hastaAra} />
+      <Text style={styles.title}>Hastalar</Text>
 
-      {seciliHasta && (
+      <View style={styles.button}>
+        <Button title="Hasta Ara" onPress={() => { setIsAddPatient(false); setIsSearchPatient(true); }} />
+        <Button title="Hasta Ekle" onPress={() => { setIsAddPatient(true); setIsSearchPatient(false); }} />
+      </View>
+
+      {isAddPatient && (
         <View>
-          <Text style={styles.header}>Tahliller</Text>
+          <TextInput placeholder="İsim" value={isim} onChangeText={setIsim} style={styles.input} placeholderTextColor="#aaa" />
+          <TextInput placeholder="Soyisim" value={soyisim} onChangeText={setSoyisim} style={styles.input} placeholderTextColor="#aaa" />
+          <TextInput placeholder="TC" value={tc} onChangeText={handleTcChange} style={styles.input} keyboardType="numeric" maxLength={11} placeholderTextColor="#aaa" />
+          <Text onPress={() => setDogumTarihiVisible(true)} style={styles.input}>
+            {dogumTarihi ? dogumTarihi.toLocaleDateString() : "Doğum Tarihi"}
+          </Text>
 
-          <View style={styles.tahlilList}>
-            {testResults.length > 0 ? (
-              testResults.map((tahlil, index) => (
-                <View key={index} style={styles.tahlilBox}>
-                  <Text style={styles.tahlilTitle}>Tahlil Tarihi: {tahlil.tarih}</Text>
-                  <View style={styles.tahlilValues}>
-                    {Object.entries(tahlil.degerler).map(([key, value], idx) => {
-                      const symbol = getResultSymbol(value, key);
-                      return (
-                        <Text key={idx} style={styles.tahlilValue}>
-                          {key}: {value} {symbol}
-                        </Text>
-                      );
-                    })}
-                  </View>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.noData}>Tahlil verisi bulunmamaktadır.</Text>
-            )}
-          </View>
+          {dogumTarihiVisible && (
+            <DatePicker date={dogumTarihi} onDateChange={setDogumTarihi} mode="date" maximumDate={new Date()} onCancel={() => setDogumTarihiVisible(false)} />
+          )}
+
+          <TextInput placeholder="Cinsiyet" value={cinsiyet} onChangeText={setCinsiyet} style={styles.input} />
+          <Button title="Hasta Kaydet" onPress={hastaKaydet} />
+        </View>
+      )}
+
+      {isSearchPatient && (
+        <View contentContainerStyle={styles.container}>
+          <Text style={styles.title}>Hasta Tahlil Görüntüleme</Text>
+          <TextInput placeholder="TC Kimlik Numarası" value={tc} onChangeText={handleTcChange} style={styles.input} keyboardType="numeric" maxLength={11} />
+          <Button title="Hasta Ara" onPress={hastaAra} />
+
+          {seciliHasta && (
+            <View>
+              <Text style={styles.header}>Tahliller</Text>
+              <View style={styles.tahlilList}>
+                {seciliHasta.tahliller.length > 0 ? compareValues(seciliHasta.tahliller) : (
+                  <Text style={styles.noData}>Tahlil verisi bulunmamaktadır.</Text>
+                )}
+              </View>
+            </View>
+          )}
         </View>
       )}
     </ScrollView>
@@ -130,6 +204,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 5,
   },
+  button: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
   header: {
     fontSize: 20,
     fontWeight: "bold",
@@ -159,6 +238,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginVertical: 5,
   },
+  comparisonText: {
+    fontSize: 14,
+    color: "#555",
+    marginVertical: 5,
+  },
   noData: {
     fontSize: 16,
     color: "gray",
@@ -166,4 +250,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PatientTestResults;
+export default PatientRegister;

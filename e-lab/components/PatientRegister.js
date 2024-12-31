@@ -82,54 +82,98 @@ const PatientRegister = () => {
     }
   };
 
+  const formatDate = (string) => {
+    try {
+      if (!string) return "Tarih Bilinmiyor"; // Boş kontrol
+      const date = new Date(string);
+      if (isNaN(date)) return "Geçersiz Tarih"; // Geçersiz tarih kontrolü
+      const day = String(date.getDate()).padStart(2, '0'); // Gün
+      const month = String(date.getMonth() + 1).padStart(2, '0'); // Ay
+      const year = date.getFullYear(); // Yıl
+      return `${day}.${month}.${year}`; // İstenilen formatta döndürme
+    } catch (error) {
+      console.error("Tarih formatlama hatası:", error);
+      return "Tarih Bilinmiyor";
+    }
+  };
+  
+
   const compareValues = (tahliller) => {
-    // Tahlil değerlerini karşılaştıracak fonksiyon
+    // Tahlil değerlerini karşılaştır
     return tahliller.map((tahlil, index) => {
       const degerler = Object.entries(tahlil.degerler);
       let comparisonResults = [];
-
-      // Değerleri karşılaştırıyoruz
-      for (let i = 0; i < degerler.length - 1; i++) {
-        for (let j = i + 1; j < degerler.length; j++) {
-          const [key1, value1] = degerler[i];
-          const [key2, value2] = degerler[j];
-          if (value1 < value2) {
+  
+      // Önceki tahlil var mı? Onu kontrol et
+      const previousTahlil = index > 0 ? tahliller[index - 1] : null;
+  
+      // Eğer önceki tahlil varsa, karşılaştırma yap
+      if (previousTahlil) {
+        const prevDegerler = previousTahlil.degerler;
+      
+        // Değerleri karşılaştır
+        degerler.forEach(([key, value]) => {
+          const previousValue = prevDegerler[key];
+      
+          if (previousValue === undefined) {
+            // Eğer önceki tahlilde bu değer yoksa
             comparisonResults.push(
-              <Text key={`${index}-${key1}-${key2}`} style={styles.comparisonText}>
-                {key1} < FontAwesome name="arrow-down" size={20} color="green" /> {key2}
+              <Text key={`${index}-${key}`} style={styles.comparisonText}>
+                {key}: {value} (Önceki tahlilde mevcut değil)
               </Text>
             );
-          } else if (value1 > value2) {
+          } else if (value === undefined) {
+            // Eğer bu tahlilde değer yoksa
             comparisonResults.push(
-              <Text key={`${index}-${key1}-${key2}`} style={styles.comparisonText}>
-                {key1} < FontAwesome name="arrow-up" size={20} color="red" /> {key2}
+              <Text key={`${index}-${key}`} style={styles.comparisonText}>
+                {key}: Değer yok
+              </Text>
+            );
+          } else if (value < previousValue) {
+            // Değer azalmışsa
+            comparisonResults.push(
+              <Text key={`${index}-${key}`} style={styles.comparisonText}>
+                {key}: {value} <FontAwesome name="arrow-down" size={20} color="green" />
+              </Text>
+            );
+          } else if (value > previousValue) {
+            // Değer artmışsa
+            comparisonResults.push(
+              <Text key={`${index}-${key}`} style={styles.comparisonText}>
+                {key}: {value} <FontAwesome name="arrow-up" size={20} color="red" /> 
               </Text>
             );
           } else {
+            // Değer değişmemişse
             comparisonResults.push(
-              <Text key={`${index}-${key1}-${key2}`} style={styles.comparisonText}>
-                {key1} ve {key2} eşit.
+              <Text key={`${index}-${key}`} style={styles.comparisonText}>
+                {key}: {value} ↔ 
               </Text>
             );
           }
-        }
+        });
+      } else {
+        // Eğer bu ilk tahlil ise, karşılaştırma yapılamaz
+        comparisonResults = degerler.map(([key, value]) => (
+          <Text key={`${index}-${key}`} style={styles.comparisonText}>
+            {key}: {value || "Değer yok"}
+          </Text>
+        ));
       }
-
+      
+  
+      // Tahlil bilgilerini geri döndür
       return (
         <View key={index} style={styles.tahlilBox}>
-          <Text style={styles.tahlilTitle}>Tahlil Tarihi: {tahlil.tarih}</Text>
+          <Text style={styles.tahlilTitle}>Tahlil Tarihi: {formatDate(tahlil.tetkikTarihi)}</Text>
           <View style={styles.tahlilValues}>
-            {Object.entries(tahlil.degerler).map(([key, value], idx) => (
-              <Text key={idx} style={styles.tahlilValue}>
-                {key}: {value}
-              </Text>
-            ))}
+            {comparisonResults}
           </View>
-          {comparisonResults}
         </View>
       );
     });
   };
+  
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>

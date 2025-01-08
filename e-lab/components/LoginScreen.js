@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { signInWithEmailAndPassword } from "firebase/auth"; // Firebase giriş işlevi
 import { auth } from "../firebaseConfig"; // Firebase yapılandırmasını içe aktar
-import { getFirestore, doc, getDoc } from "firebase/firestore"; 
+import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "firebase/firestore"; // Firestore'dan veri çekme işlevi
+import AdminHome from "./AdminHome";
+import UserHome from "./UserHome";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState(""); // Email state
@@ -13,6 +15,29 @@ export default function LoginScreen({ navigation }) {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log("Giriş Başarılı:", userCredential.user);
       Alert.alert("Başarılı", "Giriş başarılı!");
+  
+      const db = getFirestore();
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", email)); // E-posta ile eşleşen kullanıcıyı sorguluyoruz
+      const querySnapshot = await getDocs(q);
+  
+      if (!querySnapshot.empty) {
+        querySnapshot.forEach((docSnapshot) => {
+          const userData = docSnapshot.data();  // Burada data() kullanıyoruz
+          console.log("Kullanıcı Bilgileri:", userData);
+  
+          const userRole = userData.role;
+          console.log("Kullanıcı Rolü:", userRole);
+  
+          if (userRole === 'admin') {
+            navigation.navigate('AdminHome'); // Admin paneline yönlendir
+          } else if (userRole === 'user') {
+            navigation.navigate('UserHome'); // User paneline yönlendir
+          }
+        });
+      } else {
+        Alert.alert("Hata", "Kullanıcı bulunamadı. Bilgilerinizi kontrol edin.");
+      }
     } catch (err) {
       console.error("Giriş Hatası:", err.message);
       Alert.alert("Hata", "Giriş yapılamadı. Bilgilerinizi kontrol edin.");

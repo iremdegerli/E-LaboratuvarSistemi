@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Button, StyleSheet, Alert, ScrollView } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker"; 
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, firestore } from "../firebaseConfig";
@@ -96,73 +96,58 @@ const PatientRegister = () => {
       return "Tarih Bilinmiyor";
     }
   };
-  
 
   const compareValues = (tahliller) => {
-    // Tahlil değerlerini karşılaştır
+    // Her değer için en son dolu değeri takip etmek için bir nesne kullanılır
+    const lastKnownValues = {};
+  
     return tahliller.map((tahlil, index) => {
       const degerler = Object.entries(tahlil.degerler);
       let comparisonResults = [];
   
-      // Önceki tahlil var mı? Onu kontrol et
-      const previousTahlil = index > 0 ? tahliller[index - 1] : null;
+      degerler.forEach(([key, value]) => {
+        const previousValue = lastKnownValues[key]; // Bu değerin en son dolu olan değeri
   
-      // Eğer önceki tahlil varsa, karşılaştırma yap
-      if (previousTahlil) {
-        const prevDegerler = previousTahlil.degerler;
-      
-        // Değerleri karşılaştır
-        degerler.forEach(([key, value]) => {
-          const previousValue = prevDegerler[key];
-      
+        if (value === undefined || value === null || value === "") {
+          comparisonResults.push(
+            <Text key={`${index}-${key}`} style={styles.comparisonText}>
+              {key}: -
+            </Text>
+          );
+        } else {
           if (previousValue === undefined) {
-            // Eğer önceki tahlilde bu değer yoksa
             comparisonResults.push(
               <Text key={`${index}-${key}`} style={styles.comparisonText}>
-                {key}: {value} (Önceki tahlilde mevcut değil)
-              </Text>
-            );
-          } else if (value === undefined) {
-            // Eğer bu tahlilde değer yoksa
-            comparisonResults.push(
-              <Text key={`${index}-${key}`} style={styles.comparisonText}>
-                {key}: Değer yok
-              </Text>
-            );
-          } else if (value < previousValue) {
-            // Değer azalmışsa
-            comparisonResults.push(
-              <Text key={`${index}-${key}`} style={styles.comparisonText}>
-                {key}: {value} <FontAwesome name="arrow-down" size={20} color="green" />
-              </Text>
-            );
-          } else if (value > previousValue) {
-            // Değer artmışsa
-            comparisonResults.push(
-              <Text key={`${index}-${key}`} style={styles.comparisonText}>
-                {key}: {value} <FontAwesome name="arrow-up" size={20} color="red" /> 
+                {key}: {value}
               </Text>
             );
           } else {
-            // Değer değişmemişse
-            comparisonResults.push(
-              <Text key={`${index}-${key}`} style={styles.comparisonText}>
-                {key}: {value} ↔ 
-              </Text>
-            );
+            // Karşılaştırma yap
+            if (value < previousValue) {
+              comparisonResults.push(
+                <Text key={`${index}-${key}`} style={styles.comparisonText}>
+                  {key}: {value} <FontAwesome name="arrow-down" size={20} color="green" />
+                </Text>
+              );
+            } else if (value > previousValue) {
+              comparisonResults.push(
+                <Text key={`${index}-${key}`} style={styles.comparisonText}>
+                  {key}: {value} <FontAwesome name="arrow-up" size={20} color="red" />
+                </Text>
+              );
+            } else {
+              comparisonResults.push(
+                <Text key={`${index}-${key}`} style={styles.comparisonText}>
+                  {key}: {value} <FontAwesome name="arrows-h" size={20} color="blue" />
+                </Text>
+              );
+            }
           }
-        });
-      } else {
-        // Eğer bu ilk tahlil ise, karşılaştırma yapılamaz
-        comparisonResults = degerler.map(([key, value]) => (
-          <Text key={`${index}-${key}`} style={styles.comparisonText}>
-            {key}: {value || "Değer yok"}
-          </Text>
-        ));
-      }
-      
+          // Mevcut değeri en son dolu değer olarak kaydet
+          lastKnownValues[key] = value;
+        }
+      });
   
-      // Tahlil bilgilerini geri döndür
       return (
         <View key={index} style={styles.tahlilBox}>
           <Text style={styles.tahlilTitle}>Tahlil Tarihi: {formatDate(tahlil.tetkikTarihi)}</Text>
@@ -174,97 +159,191 @@ const PatientRegister = () => {
     });
   };
   
-
+  
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <Text style={styles.title}>Hastalar</Text>
+      <View style={styles.container}>
+        <Text style={styles.title}>Hastalar</Text>
 
-      <View style={styles.button}>
-        <Button title="Hasta Ara" onPress={() => { setIsAddPatient(false); setIsSearchPatient(true); }} />
-        <Button title="Hasta Ekle" onPress={() => { setIsAddPatient(true); setIsSearchPatient(false); }} />
-      </View>
-
-      {isAddPatient && (
-        <View>
-          <TextInput placeholder="İsim" value={isim} onChangeText={setIsim} style={styles.input} placeholderTextColor="#aaa" />
-          <TextInput placeholder="Soyisim" value={soyisim} onChangeText={setSoyisim} style={styles.input} placeholderTextColor="#aaa" />
-          <TextInput placeholder="TC" value={tc} onChangeText={handleTcChange} style={styles.input} keyboardType="numeric" maxLength={11} placeholderTextColor="#aaa" />
-          <Text
-            onPress={() => setDogumTarihiVisible(true)}
-            style={[styles.input, styles.dateText]}
-          >
-            {formatDate(dogumTarihi)}
-          </Text>
-
-          {dogumTarihiVisible && (
-            <DateTimePicker
-              value={dogumTarihi}
-              mode="date"
-              display="default"
-              onChange={(event, selectedDate) => {
-                setDogumTarihiVisible(false); // Takvim kapat
-                if (selectedDate) setDogumTarihi(selectedDate); // Tarihi güncelle
-              }}
-              maximumDate={new Date()} // Bugünden sonraki tarihleri engelle
-            />
-          )}
-
-          <TextInput placeholder="Cinsiyet" value={cinsiyet} onChangeText={setCinsiyet} style={styles.input} />
-          <Button title="Hasta Kaydet" onPress={hastaKaydet} />
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.button} onPress={() => { setIsAddPatient(false); setIsSearchPatient(true); }} >
+            <Text style={styles.buttonText}>Hasta Ara</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.button} onPress={() => { setIsAddPatient(true); setIsSearchPatient(false); }} >
+            <Text style={styles.buttonText}>Hasta Ekle</Text>
+          </TouchableOpacity>
         </View>
-      )}
 
-      {isSearchPatient && (
-        <View contentContainerStyle={styles.container}>
-          <Text style={styles.title}>Hasta Tahlil Görüntüleme</Text>
-          <TextInput placeholder="TC Kimlik Numarası" value={tc} onChangeText={handleTcChange} style={styles.input} keyboardType="numeric" maxLength={11} />
-          <Button title="Hasta Ara" onPress={hastaAra} />
+        {isAddPatient && (
+          <View>
+            <TextInput placeholder="İsim" value={isim} onChangeText={setIsim} style={styles.input} placeholderTextColor="#aaa" />
+            <TextInput placeholder="Soyisim" value={soyisim} onChangeText={setSoyisim} style={styles.input} placeholderTextColor="#aaa" />
+            <TextInput placeholder="TC" value={tc} onChangeText={handleTcChange} style={styles.input} keyboardType="numeric" maxLength={11} placeholderTextColor="#aaa" />
+            
+            <TouchableOpacity onPress={() => setDogumTarihiVisible(true)} style={styles.datePickerButton}>
+              <Text style={styles.datePickerButtonText}>{dogumTarihi ? dogumTarihi.toLocaleDateString("tr-TR")
+                : "Doğum Tarihi Seç"}</Text>
+            </TouchableOpacity>
+            
+            {dogumTarihiVisible && (
+              <DateTimePicker 
+                value={dogumTarihi} 
+                mode="date" 
+                display="default" 
+                onChange={(event, selectedDate) => {
+                  setDogumTarihiVisible(false); // Takvim kapat
+                  if (selectedDate) setDogumTarihi(selectedDate); // Tarihi güncelle
+                }}
+                maximumDate={new Date()} // Bugünden sonraki tarihleri engelle
+              />
+              )}
 
-          {seciliHasta && (
-            <View>
-              <Text style={styles.header}>Tahliller</Text>
-              <View style={styles.tahlilList}>
-                {seciliHasta.tahliller.length > 0 ? compareValues(seciliHasta.tahliller) : (
-                  <Text style={styles.noData}>Tahlil verisi bulunmamaktadır.</Text>
-                )}
+            <View style={styles.genderContainer}>
+              <TouchableOpacity
+                style={[styles.genderButton, cinsiyet === "Erkek" && styles.selectedButton]}
+                onPress={() => setCinsiyet("Erkek")}
+              >
+                <Text style={styles.genderText}>Erkek</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.genderButton, cinsiyet === "Kadın" && styles.selectedButton]}
+                onPress={() => setCinsiyet("Kadın")}
+              >
+                <Text style={styles.genderText}>Kadın</Text>
+              </TouchableOpacity>
+            </View>  
+
+            <TouchableOpacity style={styles.button} onPress={hastaKaydet}>
+              <Text style={styles.buttonText}>Hasta Kaydet</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {isSearchPatient && (
+          <View contentContainerStyle={styles.container}>
+            <Text style={styles.title}>Hasta Tahlil Görüntüleme</Text>
+            <TextInput placeholder="TC Kimlik Numarası" value={tc} onChangeText={handleTcChange} style={styles.input} keyboardType="numeric" maxLength={11} />
+            <TouchableOpacity style={styles.button} onPress={hastaAra}>
+              <Text style={styles.buttonText}>Hasta Ara</Text>
+            </TouchableOpacity>
+            {seciliHasta && (
+              <View>
+                <Text style={styles.header}>Tahliller</Text>
+                <View style={styles.tahlilList}>
+                  {seciliHasta.tahliller.length > 0 ? compareValues(seciliHasta.tahliller) : (
+                    <Text style={styles.noData}>Tahlil verisi bulunmamaktadır.</Text>
+                  )}
+                </View>
               </View>
-            </View>
-          )}
-        </View>
-      )}
+            )}
+          </View>
+        )}
+      </View>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingBottom: 20,
+  },
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#fff",
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingBottom: 20,
+    backgroundColor: "#f7f7f7",
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 20,
+    color: "#34495E", // Koyu mavi tonunda bir başlık rengi
+    marginBottom: 30,
   },
   input: {
-    height: 40,
-    borderColor: "#ccc",
+    height: 50,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    marginBottom: 20,
+    borderColor: "#BDC3C7", // Hafif gri bir kenarlık
     borderWidth: 1,
-    marginBottom: 10,
-    paddingHorizontal: 10,
-    borderRadius: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   button: {
+    backgroundColor: "#00796B",
+    paddingVertical: 15,
+    paddingHorizontal: 25,
+    borderRadius: 10,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    marginHorizontal: 10, // Butonlar arasında boşluk
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between", // Butonları yan yana yerleştir
+    marginBottom: 20,
+    marginTop: 20, // Üst kısımda boşluk bırak
+    paddingHorizontal: 0, // Sayfa kenarlarında boşluk
+  },
+  
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "bold",
+    textTransform: "uppercase",
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 10,
+  },
+  genderContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 20,
   },
+  genderButton: {
+    flex: 1,
+    marginHorizontal: 5,
+    backgroundColor: "#fff",
+    padding: 10,
+    alignItems: "center",
+    borderRadius: 8,
+    borderColor: "#BDC3C7", // Hafif gri bir kenarlık
+    borderWidth: 1,
+  },
+  selectedButton: {
+    backgroundColor: "#00796B",
+  },
+  genderText: {
+    color: "#555",
+  },
+  datePickerButton: {
+    backgroundColor: "#fff",
+    padding: 15,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 20,
+    alignItems: "center",
+    borderColor: "#BDC3C7",
+    borderWidth: 1,
+  },
+  datePickerButtonText: {
+    fontSize: 16,
+    color: "#555",
+  },
+  //***
   header: {
     fontSize: 20,
     fontWeight: "bold",

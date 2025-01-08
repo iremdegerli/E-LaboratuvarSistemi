@@ -1,5 +1,5 @@
 import React, { useState } from "react"; 
-import { View, Text, TextInput, Button, Alert, ScrollView, StyleSheet, SafeAreaView } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Button,Alert, ScrollView, StyleSheet, SafeAreaView } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { getFirestore, doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { firestore } from "../firebaseConfig"; // firestore importu
@@ -90,114 +90,144 @@ const AddTest = () => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.header}>Tahlil Ekleme</Text>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.container}>
+          <Text style={styles.title}>Tahlil Ekleme</Text>
 
-        {/* TC Girişi */}
-        <TextInput
-          style={styles.input}
-          placeholder="Hasta TC Kimlik No"
-          keyboardType="numeric"
-          maxLength={11}
-          value={tc}
-          onChangeText={setTc}
-        />
-        <Button title="Hasta Ara" onPress={handleFetchPatient} />
+          {/* TC Girişi */}
+          <TextInput
+            style={styles.input}
+            placeholder="Hasta TC Kimlik No"
+            keyboardType="numeric"
+            maxLength={11}
+            value={tc}
+            onChangeText={setTc}
+          />
+          <TouchableOpacity style={styles.button} onPress={handleFetchPatient}>
+            <Text style={styles.buttonText}>Tahlil Ekle</Text>
+          </TouchableOpacity>
 
-        {/* Hasta Adı */}
-        {isPatientFound && <Text style={styles.patientName}>Hasta Adı: {patientName}</Text>}
+          {/* Hasta Adı */}
+          {isPatientFound && <Text style={styles.subtitle}>Hasta Adı: {patientName}</Text>}
 
-        {/* Eğer hasta bulunduysa diğer bölümler gösterilir */}
-        {isPatientFound && (
-          <>
-            {/* Tetkik Tarihi */}
-            <View style={styles.datePicker}>
-              <Text style={styles.label}>Tetkik Tarihi:</Text>
-              <Button title="Tarih Seç" onPress={() => setShowDatePicker(true)} />
-              <Text>{testDate.toLocaleDateString()}</Text>
-            </View>
-            {showDatePicker && (
-              <DateTimePicker
-                value={testDate}
-                mode="date"
-                display="default"
-                onChange={handleDateChange}
-              />
-            )}
+          {/* Eğer hasta bulunduysa diğer bölümler gösterilir */}
+          {isPatientFound && (
+            <>
+              {/* Tetkik Tarihi */}
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(true)}
+                style={styles.datePickerButton}
+              >
+                <Text style={styles.datePickerButtonText}>
+                    {testDate
+                      ? testDate.toLocaleDateString("tr-TR")
+                      : "Tetkik Tarihi Seç"}
+                </Text>
+              </TouchableOpacity>
 
-            {/* Test Değerleri */}
-            <Text style={styles.label}>Tahlil Değerleri:</Text>
-            {Object.keys(testValues).map((key) => (
-              <View style={styles.testRow} key={key}>
-                <Text style={styles.testLabel}>{key}:</Text>
-                <TextInput
-                  style={styles.testInput}
-                  placeholder="Değer giriniz"
-                  keyboardType="numeric"
-                  value={testValues[key]}
-                  onChangeText={(value) => handleInputChange(key, value)}
+              {showDatePicker && (
+                <DateTimePicker
+                  value={testDate}
+                  mode="date"
+                  display="default"
+                  maximumDate={new Date()}
+                  onChange={handleDateChange}
                 />
-              </View>
-            ))}
+              )}
 
-            {/* Gönder Butonu */}
-            <Button title="Gönder" onPress={handleSubmit} />
-          </>
-        )}
+              {/* Test Değerleri */}
+              <Text style={styles.subtitle}>Tahlil Değerleri:</Text>
+              {Object.keys(testValues).map((key) => (
+                <View style={styles.subtitle} key={key}>
+                  <Text style={styles.subtitle}>{key}:</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Değer giriniz"
+                    keyboardType="numeric"
+                    value={testValues[key]}
+                    onChangeText={(value) => handleInputChange(key, value)}
+                  />
+                </View>
+              ))}
+          
+          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+              <Text style={styles.buttonText}>Gönder</Text>
+          </TouchableOpacity>
+            </>
+          )}
+        </View>
       </ScrollView>
-    </SafeAreaView>
+    
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  scrollContainer: {
     flexGrow: 1,
-    padding: 20,
-    backgroundColor: "#f9f9f9",
+    justifyContent: "center",
+    paddingBottom: 20,
   },
-  header: {
-    fontSize: 20,
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: "#f7f7f7",
+  },
+  title: {
+    fontSize: 26,
     fontWeight: "bold",
-    marginBottom: 20,
     textAlign: "center",
+    color: "#34495E", // Koyu mavi tonunda bir başlık rengi
+    marginBottom: 30,
   },
   input: {
+    height: 50,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    marginBottom: 20,
+    borderColor: "#BDC3C7", // Hafif gri bir kenarlık
     borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 5,
-    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  patientName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginVertical: 10,
-  },
-  datePicker: {
-    marginVertical: 10,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 5,
-  },
-  testRow: {
-    flexDirection: "row",
+  button: {
+    backgroundColor: "#00796B",
+    paddingVertical: 15,
+    paddingHorizontal: 25,
+    borderRadius: 10,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "bold",
+    textTransform: "uppercase",
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: "600",
     marginBottom: 10,
   },
-  testLabel: {
-    flex: 1,
-    fontSize: 16,
-  },
-  testInput: {
-    flex: 2,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 8,
-    borderRadius: 5,
+  datePickerButton: {
     backgroundColor: "#fff",
+    padding: 15,
+    borderRadius: 10,
+    borderColor: "#ddd",
+    borderWidth: 1,
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  datePickerButtonText: {
+    fontSize: 16,
+    color: "#555",
   },
 });
 

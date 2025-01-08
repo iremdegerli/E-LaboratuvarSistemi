@@ -1,22 +1,37 @@
 import React from "react";
-import { View, Text, StyleSheet, Image } from 'react-native';
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import AddGuide from "./AddGuide";
-import SearchGuide from "./SearchGuide";
-
-const Tab = createBottomTabNavigator();
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
+import { getAuth, signOut } from "firebase/auth";
+import { useNavigation } from '@react-navigation/native';
 
 function UserHome() {
+  const navigation = useNavigation();
+
+  // Çıkış yapma işlemi
+  const handleSignOut = async () => {
+    try {
+      const auth = getAuth();
+      await signOut(auth);
+      Alert.alert("Başarıyla çıkış yapıldı.");
+      navigation.navigate('Home');  // Ana ekrana yönlendir
+    } catch (err) {
+      console.error("Çıkış yaparken hata:", err);
+      Alert.alert("Hata", "Çıkış yaparken bir sorun oluştu.");
+    }
+  };
+
   return (
     <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Kullanıcı Paneli</Text>
-            <Image source={require('../assets/icon.png')} style={styles.logo} />
-          </View>
-    
-          <View style={styles.content}>
-            <Text style={styles.welcomeText}>Hoş Geldiniz!</Text>
-          </View>
+      <View style={styles.header}>
+        <Text style={styles.title}>Kullanıcı Paneli</Text>
+        <Image source={require('../assets/icon.png')} style={styles.logo} />
+      </View>
+
+      <View style={styles.content}>
+        <Text style={styles.welcomeText}>Hoş Geldiniz!</Text>
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <Text style={styles.signOutButtonText}>Çıkış Yap</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -69,5 +84,17 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 30,
   },
+  signOutButton: {
+    backgroundColor: '#d32f2f',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  signOutButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
+
 export default UserHome;
